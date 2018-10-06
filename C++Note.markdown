@@ -669,4 +669,285 @@ struct可以在定义的时候用{}赋初值，将上面的struct改成class，�
 
 
 
+#### 3.访问权限说明符
+
+**1>种类:public、protected、private**
+
+**2>继承、子类访问权限**
+
+|           | public | protected | private |
+| --------- | :----: | :-------: | :-----: |
+| public    |   √    |     √     |    √    |
+| protected |   √    |     √     |    √    |
+| private   |   ×    |     ×     |    ×    |
+
+**3>继承、对外的访问权限**
+
+|           |  public   | protected | private |
+| --------- | :-------: | :-------: | :-----: |
+| public    |  public   | protected | private |
+| protected | protected | protected | private |
+| private   |     ×     |     ×     |    ×    |
+
+3>目的:加强类的封装性
+
+#### 4.类的静态成员
+
+**1>静态成员变量**
+
+(1)静态成员属性在类外分配空间，不暂用对象的存储空间,存储在全局空间
+
+(2)静态成员变量隶属于整个类,静态成员变量声明周期不依赖于某个对象，是整个程序运行周期
+
+(3)静态成员变量可以通过类名直接访问,所有对象共享静态成员变量
+
+(4)公有静态成员变量可以通过对象名去访问
+
+(5)静态成员变量可以通过成员方法去访问
+
+(6)静态成员变量使用前必须初始化
+
+针对(6)的实验
+
+```c++
+#include <iostream>
+using namespace std;
+class Point{
+public:
+	void print();
+	static void output();
+private:
+	static int h;
+};
+
+void Point::print(){
+	cout << "print" << endl;
+	output();
+}
+
+void Point::output(){
+	cout << "static output" << endl;
+	cout << h << endl;
+}
+
+int Point::h = 1;//不写这一行会报错；
+
+int main(){
+	Point t;
+	t.print();
+	t.output();
+	Point::output();	
+	return 0;
+}
+```
+
+>print
+>
+>static output
+>
+>1
+>
+>static output
+>
+>1
+>
+>static output
+>
+>1
+
+**2>静态成员方法**
+
+(1)类中特殊成员函数，静态成员函数属于整个类
+
+(2)通过类名直接访问公有的静态成员函数
+
+(3)公有的静态成员函数可以通过对象名访问
+
+(4)静态成员函数没有this指针，所以不能直接访问类中的成员变量
+
+(5)不能通过类名来调用类的非静态成员函数。
+
+(6)类的对象可以使用静态成员函数和非静态成员函数。
+
+(7)静态成员函数中不能引用非静态成员。
+
+(8)非静态成员中可以引用静态成员。
+
+针对(5)(6)的实验
+
+```c++
+#include <iostream>
+using namespace std;
+class Point{
+public:
+	void print();
+	static void output();
+};
+
+void Point::print(){
+	cout << "print" << endl;
+}
+
+void Point::output(){
+	cout << "static output" << endl;
+}
+
+int main(){
+	Point t;
+	t.print();
+	t.output();
+    //Point::print();会报错
+	Point::output();	
+	return 0;
+}
+```
+
+>print
+>
+>static output
+>
+>static output
+
+针对(7)的实验
+
+```c++
+#include <iostream>
+using namespace std;
+class Point{
+public:
+	void print();
+	static void output();
+private:
+	int h;
+};
+
+void Point::print(){
+	cout << "print" << endl;
+}
+
+void Point::output(){
+	cout << "static output" << endl;
+	cout << h << endl;
+}
+
+int main(){
+	Point t;
+	t.print();
+	t.output();
+	Point::output();	
+	return 0;
+}
+```
+
+>Untitled 20.cpp:17:10: error: invalid use of member 'h' in static member function
+>
+>​        cout << h << endl;
+>
+>​                ^
+>
+>1 error generated.
+
+因为静态成员函数属于整个类，在类实例化对象之前就已经分配空间了，而类的非静态成员必须在类实例化对象后才有内存空间，所以这个调用就出错了，就好比没有声明一个变量却提前使用它一样。
+
+针对(8)的实验
+
+```c++
+#include <iostream>
+using namespace std;
+class Point{
+public:
+	void print();
+	static void output();
+private:
+	int h;
+};
+
+void Point::print(){
+	cout << "print" << endl;
+	output();
+}
+
+void Point::output(){
+	cout << "static output" << endl;
+}
+
+int main(){
+	Point t;
+	t.print();
+	t.output();
+	Point::output();	
+	return 0;
+}
+```
+
+>print
+>
+>static output
+>
+>static output
+>
+>static output
+
+**3>静态成员成员函数不能声明成const**
+
+静态成员函数不与任何对象绑定在一起，它们不包含 this 指针。作为结果，静态成员不能声明成 const 的，而且我们也不能在 static 函数体内使用this 指针。
+
+**4>具有类内初始值的静态成员定义时不可再设初值**
+
+```c++
+#include <iostream>
+
+using namespace std;
+class A{
+public:
+	static int r = 3;
+};
+
+int main() {
+	A::r = 0;
+	return 0;
+}
+```
+
+>Untitled 19.cpp:6:13: error: non-const static data member must be initialized out of line
+>
+>​        static int r = 3;
+>
+>​                   ^   ~
+>
+>1 error generated.
+
+```c++
+#include <iostream>
+
+using namespace std;
+class A{
+public:
+	static int r;
+};
+
+int A::r = 0;
+int main() {
+	A::r = 5;
+	A m;
+	cout << m.r << endl;
+	return 0;
+}
+```
+
+>5
+
+#### 5.构造函数相关
+
+#### 5.1有哪些构造函数(默认、委托、拷贝、移动)
+
+**1>默认构造函数**
+
+| 语法                      | 解释                               |
+| ------------------------- | ---------------------------------- |
+| ClassName();              | 默认构造函数的声明                 |
+| ClassName::ClassName() {} | 默认构造函数的类体外定义           |
+| ClassName() = delete;     | 禁止编译器自动生成默认构造函数     |
+| ClassName() = default     | 显式强制编译器自动生成默认构造函数 |
+
 
