@@ -950,4 +950,269 @@ int main() {
 | ClassName() = delete;     | 禁止编译器自动生成默认构造函数     |
 | ClassName() = default     | 显式强制编译器自动生成默认构造函数 |
 
+**2>委托构造函数**
+
+一个委托构造函数也有一个成员的初始值的列表和一个函数体。在委托构造函数内，成员初始值列表只有唯一的入口，就是类名本身。**和其他成员初始值一样，类名后面紧跟圆括号括起来的参数列表，参数列表必须与类中另外一个构造函数匹配**
+
+```c++
+#include <iostream>
+
+using namespace std;
+class A{
+public:
+	//非委托构造函数使用对应的实参初始化成员
+    A(string a, int b, double c) : p(a), q(b), r(c) {
+        cout << "非委托" << endl;
+    }
+	//其余构造函数全部委托给另一个构造函数
+	A() : A("h", 0, 0){
+		cout << "委托1" << endl; 
+	}
+	A(string d) : A(d, 0, 0){
+		cout << "委托2" << endl;
+	}
+	A(char m) : A(){
+		cout << "委托3" << endl;
+	}
+private:
+	string p;
+	int q;
+	double r;
+};
+
+
+int main() {
+    A t("hanxu", 19, 21.3);
+    A a;
+    A b("hanxu");
+    A c('h');
+	return 0;
+}
+```
+
+>非委托
+>非委托
+>委托1
+>非委托
+>委托2
+>非委托
+>委托1
+>委托3
+
+注意:在c++11中才能使用 g++ t.cpp -std=c++11
+
+**3>拷贝构造函数**
+
+1)默认拷贝构造函数(浅拷贝)
+
+```c++
+ #include <iostream>
+using namespace std;
+
+class A{
+private:
+	int m;
+	int n;
+public:
+	A(int a) : m(a){}
+	void show(){
+		cout << m << endl;
+	}
+};
+
+int main(){
+	A a(1000);
+	A b = a;//不是赋值，而是拷贝构造函数
+	a.show();
+	b.show();
+	return 0;
+}
+```
+
+>1000
+>
+>1000
+
+2)拷贝构造函数(深拷贝)
+
+(1)定义:如果一个构造函数的第一个参数是自身类类型的引用，且任何额外参数都有默认值，则此构造函数是拷贝构造函数
+
+(2)为什么必须传引用?
+
+​	在函数调用过程中，具有非引用类型的参数要进行拷贝初始化。类似的，当一个函数具有非引用的返回类型时，返回值会被采用初始化调用方的结果
+
+​	拷贝构造函数被用来初始化非引用类类型的参数，这一特性解释了为什么拷贝构造函数自己的参数必须是引用类型。如果其参数不是引用类型，则调用永远也不会成功——为了调用拷贝构造函数，我们必须拷贝它的实参，但是为了拷贝这个实参，我们又需要调用拷贝构造函数，如此无限循环。
+
+```c++
+ #include <iostream>
+using namespace std;
+
+class A{
+private:
+	int m;
+public:
+	A(int a) : m(a){}
+	A(const A &a){
+		m = a.m;
+	}
+	void show(){
+		cout << m << endl;
+	}
+	void getm(){
+		cout << &m << endl;
+	}
+};
+
+int main(){
+	A a(1000);
+	A b = a;
+	a.show();
+	b.show();
+	A c(a);
+	c.show();
+	return 0;
+}
+```
+
+>1000
+>
+>1000
+>
+>1000
+
+下列哪些函数是拷贝构造函数？
+
+```c++
+X::X(const X&);      
+X::X(X);     
+X::X(X&, int a=1);      
+X::X(X&, int a=1, int b=2);  
+```
+
+对于一个类X, 如果一个构造函数的第一个参数是下列之一:
+a) X&
+b) const X&
+c) volatile X&
+d) const volatile X&
+且没有其他参数或其他参数都有默认值,那么这个函数是拷贝构造函数.
+
+```c++
+X::X(const X&);  //是拷贝构造函数      
+X::X(X&, int=1); //是拷贝构造函数     
+X::X(X&, int a=1, int b=2); //当然也是拷贝构造函数  
+```
+
+3)合成构造函数
+
+合成复制构造函数会对成员逐个进行初始化，将新对象初始化为原对象的副本
+
+编译器将原对象的每个非 static 成员，依次复制到正创建的对象。合成复制构造函数直接复制内置类型成员的值，类类型成员使用该类的复制构造函数进行复制。数组成员的复制要注意：**虽然一般不能复制数组，但如果一个类具有数组成员，则合成复制构造函数将复制数组。复制数组时合成复制构造函数将复制数组的每一个元素。**
+
+```c++
+#include <iostream>
+using namespace std;
+
+class A{
+public:
+	A(string s1) : s(s1){}
+	A(const A&);
+	void getA();
+private:
+	string s;
+	int r = 0;
+	double f = 1.2;
+};
+
+A::A(const A &obj) : s(obj.s), r(obj.r), f(obj.f){}
+void A::getA(){
+	cout << s << " " << r << " " << f << endl;
+}
+int main(){
+	A a("hello");
+	a.getA();
+	A b(a);
+	b.getA();
+	return 0;
+}
+```
+
+>hello 0 1.2
+>
+>hello 0 1.2
+
+
+
+
+
+#### 6.成员初始化
+
+1)使用构造函数初始值的两点原因
+
+(1)在很多类中，初始化和赋值的区别事关底层效率问题:
+
+**初始化:直接初始化数据成员**
+
+构造内部赋值:初始化再赋值
+
+(2)一些数据成员必须被初始化
+
+2)成员初始化顺序
+
+成员的初始化顺序与它们在类定义中出现的顺序一致，第一个成员先被初始化，然后第二个，以此类推
+
+**Tip**：最好令构造函数初始值的顺序与成员声明顺序保持一致。尽可能避免使用某些成员初始化其他成员
+
+```c++
+#include <iostream>
+
+using namespace std;
+class A{
+private:
+	int i;
+	int j;
+public:
+	A(int val) : j(val), i(j){
+		
+	}
+};
+
+
+int main() {
+	
+	return 0;
+}
+```
+
+>Untitled 19.cpp:9:25: warning: field 'j' is uninitialized when used here [-Wuninitialized]
+>
+>​        A(int val) : j(val), i(j){
+>
+>​                               ^
+>
+>1 warning generated.
+
+定义顺序为先i后j，但是在初始化的时候:用val初始化j，再用j初始化i，显然顺序是错误的
+
+由于编译器的友好，所以只生成了警告
+
+```c++
+#include <iostream>
+
+using namespace std;
+class A{
+private:
+	int i;
+	int j;
+public:
+	A(int val) : i(val), j(i){}
+};
+
+
+int main() {
+	
+	return 0;
+}
+```
+
+编译通过
 
